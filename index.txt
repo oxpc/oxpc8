@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phonetic Arabic Virtual Keyboard</title>
+    <style>
+        :root {
+            --bg-color: #f0f2f5;
+            --key-bg: #ffffff;
+            --key-hover: #e4e6eb;
+            --key-active: #d8dadf;
+            --primary: #1877f2;
+            --text-main: #333;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 950px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            color: var(--text-main);
+            margin: 0;
+        }
+
+        /* Toggle Switch */
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider { background-color: var(--primary); }
+        input:checked + .slider:before { transform: translateX(26px); }
+
+        /* Text Area */
+        textarea {
+            width: 100%;
+            height: 150px;
+            padding: 15px;
+            font-size: 32px;
+            line-height: 1.5;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            resize: vertical;
+            margin-bottom: 20px;
+            font-family: 'Times New Roman', serif; 
+            box-sizing: border-box;
+            outline: none;
+        }
+        
+        textarea:focus {
+            border-color: var(--primary);
+        }
+
+        /* Keyboard Layout */
+        .keyboard {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            user-select: none;
+            background: #d1d5db;
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        .row {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .key {
+            background: var(--key-bg);
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            color: var(--text-main);
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 55px;
+            min-width: 45px;
+            flex: 1;
+            position: relative;
+            transition: all 0.1s;
+            box-shadow: 0 2px 0 #888;
+        }
+
+        .key:active, .key.active {
+            transform: translateY(2px);
+            box-shadow: none;
+            background-color: var(--key-active);
+        }
+
+        .key span.main { font-size: 1.4rem; font-weight: normal; font-family: 'Times New Roman', serif; }
+        .key span.sub { font-size: 0.65rem; color: #999; position: absolute; top: 2px; right: 4px; font-family: sans-serif; font-weight: bold;}
+
+        .key-special { flex: 1.5; background: #e0e0e0; font-size: 0.9rem; }
+        .key-space { flex: 6; }
+        .key-shift { flex: 1.8; }
+        
+        .legend {
+            margin-top: 15px;
+            font-size: 0.85rem;
+            color: #666;
+            text-align: center;
+            line-height: 1.6;
+        }
+        
+        .legend b {
+            background: #e9ecef;
+            padding: 0 4px;
+            border-radius: 3px;
+        }
+
+        /* RTL specific styling */
+        textarea[dir="rtl"] {
+            text-align: right;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>Phonetic Arabic Keyboard</h1>
+        <div class="toggle-container">
+            <span>Phonetic Mode</span>
+            <label class="switch">
+                <input type="checkbox" id="modeToggle" checked>
+                <span class="slider"></span>
+            </label>
+        </div>
+    </div>
+
+    <textarea id="output" dir="rtl" placeholder="Type here... (e.g. Double Shift+A for ◌ً, Shift+I for ◌ِ)"></textarea>
+
+    <div class="keyboard" id="keyboard">
+        <!-- Generated by JS -->
+    </div>
+
+    <div class="legend">
+        <b>g</b>=غ, <b>Sh+g</b>=ع | <b>c</b>=ث, <b>Sh+c</b>=ش | <b>r</b>=ر, <b>Sh+r</b>=ز | <b>z</b>=ذ, <b>Sh+z</b>=ظ | <b>Sh+t</b>=ط <br>
+        <b>x</b>=ا, <b>Sh+x</b>=أ | <b>Sh+k</b>=خ | <b>Sh+aa</b>= ً (an) | <b>Sh+uu</b>= ٌ (un) | <b>Sh+ii</b>= ٍ (in)
+    </div>
+</div>
+
+<script>
+    /**
+     * Phonetic Mapping Logic (Franco-Arabic style)
+     */
+    const mappings = {
+        // Numbers & Symbols Row
+        '`': { default: 'ذ', shift: '\u0651' }, // Shift is Shadda ( ّ )
+        '1': { default: '١', shift: '!' },
+        '2': { default: '٢', shift: 'ء' }, 
+        '3': { default: '٣', shift: 'ع' }, 
+        '4': { default: '٤', shift: 'ش' }, 
+        '5': { default: '٥', shift: 'خ' }, 
+        '6': { default: '٦', shift: 'ط' }, 
+        '7': { default: '٧', shift: 'ح' }, 
+        '8': { default: '٨', shift: 'ق' }, 
+        '9': { default: '٩', shift: 'ص' }, 
+        '0': { default: '٠', shift: '(' },
+        '-': { default: '-', shift: '_' },
+        '=': { default: '=', shift: '+' },
+
+        // Row 1
+        'q': { default: 'ق', shift: 'ض' },
+        'w': { default: 'و', shift: 'ؤ' },
+        'e': { default: 'ع', shift: 'إ' }, 
+        
+        // r = ر , Shift+r = ز
+        'r': { default: 'ر', shift: 'ز' }, 
+        
+        // t = ت , Shift+t = ط
+        't': { default: 'ت', shift: 'ط' }, 
+        
+        'y': { default: 'ي', shift: 'ى' },
+        
+        // u = Waw, Shift+u = Damma ( ُ )
+        'u': { default: 'و', shift: '\u064F' }, 
+        
+        // i = Ya, Shift+i = Kasra ( ِ )
+        'i': { default: 'ي', shift: '\u0650' },
+        
+        // o = Ha, Shift+o = Sukun ( ْ )
+        'o': { default: 'ه', shift: '\u0652' }, 
+        
+        // p = Marbuta
+        'p': { default: 'ة', shift: 'P' },
+        
+        '[': { default: 'ج', shift: '{' },
+        ']': { default: 'د', shift: '}' },
+        '\\': { default: '\\', shift: '|' },
+
+        // Row 2
+        // a = Alif, Shift+a = Fatha ( َ )
+        'a': { default: 'ا', shift: '\u064E' },
+        
+        's': { default: 'س', shift: 'ص' }, 
+        'd': { default: 'د', shift: 'ض' }, 
+        'f': { default: 'ف', shift: 'F' },
+        
+        // g = غ , Shift+g = ع
+        'g': { default: 'غ', shift: 'ع' }, 
+        
+        'h': { default: 'ه', shift: 'ح' }, 
+        'j': { default: 'ج', shift: 'J' },
+        
+        // Shift+k = خ
+        'k': { default: 'ك', shift: 'خ' },
+        
+        'l': { default: 'ل', shift: 'لا' },
+        ';': { default: '؛', shift: ':' },
+        '\'': { default: '،', shift: '"' },
+
+        // Row 3
+        // z = ذ , Shift+z = ظ
+        'z': { default: 'ذ', shift: 'ظ' }, 
+        
+        // x = ا, Shift+x = أ
+        'x': { default: 'ا', shift: 'أ' }, 
+        
+        // c = ث , Shift+c = ش
+        'c': { default: 'ث', shift: 'ش' }, 
+        
+        'v': { default: 'ظ', shift: 'V' },
+        'b': { default: 'ب', shift: 'B' },
+        'n': { default: 'ن', shift: 'N' },
+        'm': { default: 'م', shift: 'M' },
+        ',': { default: 'و', shift: '<' },
+        '.': { default: 'ز', shift: '>' },
+        '/': { default: 'ظ', shift: '?' }
+    };
+
+    // Mapping fallback for physical key codes
+    const codeToChar = {
+        'Backquote': '`', 'Digit1': '1', 'Digit2': '2', 'Digit3': '3', 'Digit4': '4', 'Digit5': '5', 'Digit6': '6', 'Digit7': '7', 'Digit8': '8', 'Digit9': '9', 'Digit0': '0', 'Minus': '-', 'Equal': '=',
+        'KeyQ': 'q', 'KeyW': 'w', 'KeyE': 'e', 'KeyR': 'r', 'KeyT': 't', 'KeyY': 'y', 'KeyU': 'u', 'KeyI': 'i', 'KeyO': 'o', 'KeyP': 'p', 'BracketLeft': '[', 'BracketRight': ']', 'Backslash': '\\',
+        'KeyA': 'a', 'KeyS': 's', 'KeyD': 'd', 'KeyF': 'f', 'KeyG': 'g', 'KeyH': 'h', 'KeyJ': 'j', 'KeyK': 'k', 'KeyL': 'l', 'Semicolon': ';', 'Quote': '\'',
+        'KeyZ': 'z', 'KeyX': 'x', 'KeyC': 'c', 'KeyV': 'v', 'KeyB': 'b', 'KeyN': 'n', 'KeyM': 'm', 'Comma': ',', 'Period': '.', 'Slash': '/'
+    };
+
+    // Keyboard Structure
+    const layout = [
+        ['`', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', 'Backspace'],
+        ['Tab', 'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', '[', ']', '\\'],
+        ['Caps', 'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', ';', '\'', 'Enter'],
+        ['Shift', 'z', 'x', 'c', 'v', 'b', 'n', 'm', ',', '.', '/', 'Shift'],
+        ['Space']
+    ];
+
+    const textarea = document.getElementById('output');
+    const keyboardContainer = document.getElementById('keyboard');
+    const toggle = document.getElementById('modeToggle');
+    
+    let isShifted = false;
+    let isCaps = false;
+
+    // Haraka Constants
+    const FATHA = '\u064E';
+    const FATHATAN = '\u064B'; // Fathatayn (Shift+aa)
+    
+    const DAMMA = '\u064F';
+    const DAMMATAN = '\u064C'; // Dammatayn (Shift+uu)
+    
+    const KASRA = '\u0650';
+    const KASRATAN = '\u064D'; // Kasratayn (Shift+ii)
+
+    // Helper: Check if char is a diacritic to improve display
+    function isDiacritic(char) {
+        return /[\u064B-\u0652\u0670\u0651]/.test(char);
+    }
+
+    function getChar(baseKey, shift) {
+        if (!mappings[baseKey]) return baseKey; 
+        if (shift) {
+            return mappings[baseKey].shift || mappings[baseKey].default;
+        }
+        return mappings[baseKey].default;
+    }
+
+    // Logic to insert char or handle Double-Tap Haraka
+    function processInput(char) {
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const val = textarea.value;
+
+        // Check if cursor is at least 1 char in and nothing is highlighted
+        if (start > 0 && start === end) {
+            const prevChar = val.substring(start - 1, start);
+
+            // Double Tap Logic
+            
+            // Shift+u+u : Damma -> Dammatan
+            if (char === DAMMA && prevChar === DAMMA) {
+                replacePreviousChar(start, end, val, DAMMATAN);
+                return;
+            }
+            
+            // Shift+a+a : Fatha -> Fathatan
+            if (char === FATHA && prevChar === FATHA) {
+                replacePreviousChar(start, end, val, FATHATAN);
+                return;
+            }
+
+            // Shift+i+i : Kasra -> Kasratan
+            if (char === KASRA && prevChar === KASRA) {
+                replacePreviousChar(start, end, val, KASRATAN);
+                return;
+            }
+        }
+
+        // Standard Insert
+        insertText(start, end, val, char);
+    }
+
+    function replacePreviousChar(start, end, val, newChar) {
+        textarea.value = val.substring(0, start - 1) + newChar + val.substring(end);
+        textarea.selectionStart = textarea.selectionEnd = start; // Length same (1 char for 1 char)
+        textarea.focus();
+    }
+
+    function insertText(start, end, val, text) {
+        textarea.value = val.substring(0, start) + text + val.substring(end);
+        textarea.selectionStart = textarea.selectionEnd = start + text.length;
+        textarea.focus();
+    }
+
+    function handleBackspace() {
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const val = textarea.value;
+        if (start === end && start > 0) {
+            textarea.value = val.substring(0, start - 1) + val.substring(end);
+            textarea.selectionStart = textarea.selectionEnd = start - 1;
+        } else if (start !== end) {
+            textarea.value = val.substring(0, start) + val.substring(end);
+            textarea.selectionStart = textarea.selectionEnd = start;
+        }
+        textarea.focus();
+    }
+
+    // --- Rendering ---
+
+    function renderKeyboard() {
+        keyboardContainer.innerHTML = '';
+        
+        layout.forEach(rowKeys => {
+            const rowDiv = document.createElement('div');
+            rowDiv.className = 'row';
+
+            rowKeys.forEach(key => {
+                const btn = document.createElement('div');
+                
+                let displayMain = key;
+                let displaySub = '';
+                let isSpecial = false;
+                
+                if (key.length > 1) {
+                    isSpecial = true;
+                    if(key === 'Backspace') btn.innerHTML = '⌫';
+                    else if(key === 'Tab') btn.innerHTML = 'Tab';
+                    else if(key === 'Caps') btn.innerHTML = 'Caps';
+                    else if(key === 'Enter') btn.innerHTML = '↵';
+                    else if(key === 'Shift') btn.innerHTML = '⇧';
+                    else if(key === 'Space') btn.innerHTML = ' ';
+                    
+                    btn.className = `key key-special key-${key.toLowerCase()}`;
+                    btn.dataset.code = key; 
+                } else {
+                    btn.className = 'key';
+                    const arabicChar = getChar(key, isShifted || isCaps); 
+                    displayMain = arabicChar;
+                    
+                    // Optimization: Show dotted circle for diacritics so they are visible
+                    if (isDiacritic(arabicChar)) {
+                        displayMain = '◌' + arabicChar;
+                    }
+
+                    displaySub = key.toUpperCase();
+                    
+                    btn.innerHTML = `<span class="sub">${displaySub}</span><span class="main">${displayMain}</span>`;
+                    btn.dataset.key = key;
+                }
+
+                // Mouse Interaction
+                btn.addEventListener('mousedown', (e) => {
+                    e.preventDefault(); 
+                    
+                    if (isSpecial) {
+                        if (key === 'Backspace') handleBackspace();
+                        if (key === 'Space') processInput(' ');
+                        if (key === 'Enter') processInput('\n');
+                        if (key === 'Tab') processInput('\t');
+                        if (key === 'Shift') {
+                            isShifted = !isShifted;
+                            renderKeyboard(); 
+                        }
+                        if (key === 'Caps') {
+                            isCaps = !isCaps;
+                            renderKeyboard();
+                        }
+                    } else {
+                        // Insert standard char
+                        const charToInsert = getChar(key, isShifted || isCaps);
+                        processInput(charToInsert);
+                        if(isShifted) {
+                            isShifted = false;
+                            renderKeyboard();
+                        }
+                    }
+                });
+
+                rowDiv.appendChild(btn);
+            });
+            keyboardContainer.appendChild(rowDiv);
+        });
+        
+        if(isShifted) document.querySelectorAll('.key-shift').forEach(el => el.style.background = '#bbb');
+        if(isCaps) document.querySelectorAll('.key-caps').forEach(el => el.style.background = '#bbb');
+    }
+
+    // --- Physical Keyboard Events ---
+
+    document.addEventListener('keydown', (e) => {
+        if (!toggle.checked || document.activeElement !== textarea) return;
+        if (e.ctrlKey || e.metaKey || e.altKey) return;
+
+        const baseKey = codeToChar[e.code];
+
+        if (e.key === 'Shift') {
+            if(!isShifted) {
+                isShifted = true;
+                renderKeyboard();
+            }
+            return;
+        }
+        
+        if (e.key === 'CapsLock') {
+            isCaps = !isCaps; 
+            renderKeyboard();
+            return;
+        }
+
+        highlightKey(e.code, true);
+
+        if (baseKey && mappings[baseKey]) {
+            e.preventDefault();
+            const char = getChar(baseKey, e.shiftKey || isCaps); 
+            processInput(char);
+        }
+    });
+
+    document.addEventListener('keyup', (e) => {
+        if (e.key === 'Shift') {
+            isShifted = false;
+            renderKeyboard();
+        }
+        highlightKey(e.code, false);
+    });
+
+    function highlightKey(code, isActive) {
+        let btn;
+        const char = codeToChar[code];
+        
+        if (char) {
+            btn = document.querySelector(`.key[data-key="${char}"]`);
+        } else {
+            let selectorCode = code;
+            if(code === 'Space') selectorCode = 'Space';
+            if(code === 'Enter') selectorCode = 'Enter';
+            if(code.includes('Shift')) selectorCode = 'Shift';
+            if(code === 'Backspace') selectorCode = 'Backspace';
+            
+            btn = document.querySelector(`.key[data-code="${selectorCode}"]`);
+        }
+
+        if (btn) {
+            if (isActive) btn.classList.add('active');
+            else btn.classList.remove('active');
+        }
+    }
+
+    renderKeyboard();
+
+</script>
+
+</body>
+</html>
